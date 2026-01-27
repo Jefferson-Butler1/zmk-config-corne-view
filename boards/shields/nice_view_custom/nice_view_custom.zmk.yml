@@ -1,0 +1,7 @@
+file_format: "1"
+id: nice_view_custom
+name: nice!view Custom
+type: display
+url: https://nicekeyboards.com/nice-view
+requires:
+  - nice_view_spi
