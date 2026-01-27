@@ -1,2 +1,8 @@
 config SHIELD_NICE_VIEW_CUSTOM
     def_bool $(shields_list_contains,nice_view_custom)
+
+if SHIELD_NICE_VIEW_CUSTOM
+    depends on HAS_DTS
+    depends on CONFIG_ZMK_DISPLAY
+    depends on CONFIG_ZMK_BATTERY
+endif
