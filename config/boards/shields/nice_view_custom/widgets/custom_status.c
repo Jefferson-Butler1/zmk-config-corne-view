@@ -18,8 +18,10 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/keycode_state_changed.h>
 #include <zmk/keymap.h>
 #include <zmk/hid.h>
+#if IS_ENABLED(CONFIG_ZMK_WPM)
 #include <zmk/wpm.h>
 #include <zmk/events/wpm_state_changed.h>
+#endif
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/modifiers.h>
 #if IS_ENABLED(CONFIG_ZMK_BLE)
@@ -41,7 +43,9 @@ static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
 static char char_buffer[CHAR_BUFFER_SIZE + 1] = {0};
 static int char_buffer_pos = 0;
+#if IS_ENABLED(CONFIG_ZMK_WPM)
 static int current_wpm = 0;
+#endif
 #endif
 
 // ============================================================================
@@ -190,12 +194,14 @@ static void draw_middle(struct zmk_widget_custom_status *widget) {
         lv_canvas_draw_text(canvas, 0, 12, CANVAS_SIZE, &label_dsc, char_buffer);
     }
 
+#if IS_ENABLED(CONFIG_ZMK_WPM)
     // WPM at bottom
     char wpm_text[16];
     snprintf(wpm_text, sizeof(wpm_text), "%d WPM", current_wpm);
     lv_draw_label_dsc_t wpm_dsc;
     init_label_dsc(&wpm_dsc, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
     lv_canvas_draw_text(canvas, 0, 38, CANVAS_SIZE, &wpm_dsc, wpm_text);
+#endif
 #else
     // Peripheral: show uptime
     int64_t uptime_ms = k_uptime_get();
@@ -332,6 +338,7 @@ static struct layer_state layer_get_state(const zmk_event_t *eh) {
 ZMK_DISPLAY_WIDGET_LISTENER(widget_layer, struct layer_state, layer_update_cb, layer_get_state)
 ZMK_SUBSCRIPTION(widget_layer, zmk_layer_state_changed);
 
+#if IS_ENABLED(CONFIG_ZMK_WPM)
 // WPM handling
 struct wpm_state {
     int wpm;
@@ -351,6 +358,7 @@ static struct wpm_state wpm_get_state(const zmk_event_t *eh) {
 
 ZMK_DISPLAY_WIDGET_LISTENER(widget_wpm, struct wpm_state, wpm_update_cb, wpm_get_state)
 ZMK_SUBSCRIPTION(widget_wpm, zmk_wpm_state_changed);
+#endif
 
 // Keycode handling
 static char keycode_to_char(uint32_t keycode, bool shifted) {
@@ -473,7 +481,9 @@ int zmk_widget_custom_status_init(struct zmk_widget_custom_status *widget, lv_ob
 #endif
     widget->state.layer_index = zmk_keymap_highest_layer_active();
     widget->state.layer_label = NULL;
+#if IS_ENABLED(CONFIG_ZMK_WPM)
     current_wpm = zmk_wpm_get_state();
+#endif
 #else
     widget->state.layer_index = 0;
     widget->state.layer_label = NULL;
@@ -488,7 +498,9 @@ int zmk_widget_custom_status_init(struct zmk_widget_custom_status *widget, lv_ob
     widget_bt_init();
 #endif
     widget_layer_init();
+#if IS_ENABLED(CONFIG_ZMK_WPM)
     widget_wpm_init();
+#endif
     widget_keycode_init();
 #endif
 
