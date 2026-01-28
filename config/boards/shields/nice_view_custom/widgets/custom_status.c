@@ -18,6 +18,8 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/keycode_state_changed.h>
 #include <zmk/keymap.h>
 #include <zmk/hid.h>
+#include <zmk/wpm.h>
+#include <zmk/events/wpm_state_changed.h>
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/modifiers.h>
 #if IS_ENABLED(CONFIG_ZMK_BLE)
@@ -39,6 +41,7 @@ static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
 static char char_buffer[CHAR_BUFFER_SIZE + 1] = {0};
 static int char_buffer_pos = 0;
+static int current_wpm = 0;
 #endif
 
 // ============================================================================
@@ -177,26 +180,22 @@ static void draw_middle(struct zmk_widget_custom_status *widget) {
     init_label_dsc(&label_dsc, &lv_font_montserrat_14, LV_TEXT_ALIGN_CENTER);
 
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-    // Central: show recent keystrokes
+    // Central: show recent keystrokes + WPM
     int len = strlen(char_buffer);
 
+    // Keystrokes at top
     if (len == 0) {
-        lv_canvas_draw_text(canvas, 0, 26, CANVAS_SIZE, &label_dsc, "...");
-    } else if (len <= 6) {
-        lv_draw_label_dsc_t big_dsc;
-        init_label_dsc(&big_dsc, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
-        lv_canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &big_dsc, char_buffer);
+        lv_canvas_draw_text(canvas, 0, 12, CANVAS_SIZE, &label_dsc, "...");
     } else {
-        char line1[8] = {0};
-        char line2[8] = {0};
-        int mid = len / 2;
-
-        strncpy(line1, char_buffer, mid);
-        strncpy(line2, char_buffer + mid, len - mid);
-
-        lv_canvas_draw_text(canvas, 0, 16, CANVAS_SIZE, &label_dsc, line1);
-        lv_canvas_draw_text(canvas, 0, 36, CANVAS_SIZE, &label_dsc, line2);
+        lv_canvas_draw_text(canvas, 0, 12, CANVAS_SIZE, &label_dsc, char_buffer);
     }
+
+    // WPM at bottom
+    char wpm_text[16];
+    snprintf(wpm_text, sizeof(wpm_text), "%d WPM", current_wpm);
+    lv_draw_label_dsc_t wpm_dsc;
+    init_label_dsc(&wpm_dsc, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
+    lv_canvas_draw_text(canvas, 0, 38, CANVAS_SIZE, &wpm_dsc, wpm_text);
 #else
     // Peripheral: show uptime
     int64_t uptime_ms = k_uptime_get();
@@ -333,6 +332,26 @@ static struct layer_state layer_get_state(const zmk_event_t *eh) {
 ZMK_DISPLAY_WIDGET_LISTENER(widget_layer, struct layer_state, layer_update_cb, layer_get_state)
 ZMK_SUBSCRIPTION(widget_layer, zmk_layer_state_changed);
 
+// WPM handling
+struct wpm_state {
+    int wpm;
+};
+
+static void wpm_update_cb(struct wpm_state state) {
+    current_wpm = state.wpm;
+    struct zmk_widget_custom_status *widget;
+    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
+        draw_middle(widget);
+    }
+}
+
+static struct wpm_state wpm_get_state(const zmk_event_t *eh) {
+    return (struct wpm_state){.wpm = zmk_wpm_get_state()};
+}
+
+ZMK_DISPLAY_WIDGET_LISTENER(widget_wpm, struct wpm_state, wpm_update_cb, wpm_get_state)
+ZMK_SUBSCRIPTION(widget_wpm, zmk_wpm_state_changed);
+
 // Keycode handling
 static char keycode_to_char(uint32_t keycode, bool shifted) {
     if (keycode >= HID_USAGE_KEY_KEYBOARD_A && keycode <= HID_USAGE_KEY_KEYBOARD_Z) {
@@ -454,6 +473,7 @@ int zmk_widget_custom_status_init(struct zmk_widget_custom_status *widget, lv_ob
 #endif
     widget->state.layer_index = zmk_keymap_highest_layer_active();
     widget->state.layer_label = NULL;
+    current_wpm = zmk_wpm_get_state();
 #else
     widget->state.layer_index = 0;
     widget->state.layer_label = NULL;
@@ -468,6 +488,7 @@ int zmk_widget_custom_status_init(struct zmk_widget_custom_status *widget, lv_ob
     widget_bt_init();
 #endif
     widget_layer_init();
+    widget_wpm_init();
     widget_keycode_init();
 #endif
 
