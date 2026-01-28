@@ -22,10 +22,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/ble_active_profile_changed.h>
 #endif
 
-#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-#include <zmk/split/bluetooth/central.h>
-#include <zmk/events/split_peripheral_status_changed.h>
-#endif
 
 #include "custom_status.h"
 
@@ -45,10 +41,6 @@ static bool mod_ctrl = false;
 static bool mod_alt = false;
 static bool mod_gui = false;
 
-// Peripheral connection state
-#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-static bool peripheral_connected = false;
-#endif
 
 // ============================================================================
 // KEYCODE TO CHARACTER MAPPING
@@ -190,15 +182,6 @@ static void draw_top(struct zmk_widget_custom_status *widget) {
     snprintf(bt_text, sizeof(bt_text), "USB");
 #endif
     lv_canvas_draw_text(canvas, 0, 2, CANVAS_SIZE - 4, &bt_dsc, bt_text);
-
-    // Peripheral connection indicator (for split keyboards)
-#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-    lv_draw_label_dsc_t periph_dsc;
-    init_label_dsc(&periph_dsc, &lv_font_montserrat_14, LV_TEXT_ALIGN_CENTER);
-
-    const char *periph_text = peripheral_connected ? "R" LV_SYMBOL_OK : "R" LV_SYMBOL_CLOSE;
-    lv_canvas_draw_text(canvas, 0, 22, CANVAS_SIZE, &periph_dsc, periph_text);
-#endif
 
     // Modifier indicators (bottom of top section)
     lv_draw_rect_dsc_t mod_bg;
@@ -365,29 +348,6 @@ ZMK_DISPLAY_WIDGET_LISTENER(widget_bt, struct bt_state, bt_update_cb, bt_get_sta
 ZMK_SUBSCRIPTION(widget_bt, zmk_ble_active_profile_changed);
 #endif
 
-#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-struct peripheral_state {
-    bool connected;
-};
-
-static void peripheral_update_cb(struct peripheral_state state) {
-    peripheral_connected = state.connected;
-    struct zmk_widget_custom_status *widget;
-    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
-        draw_top(widget);
-    }
-}
-
-static struct peripheral_state peripheral_get_state(const zmk_event_t *eh) {
-    return (struct peripheral_state){
-        .connected = zmk_split_bt_peripheral_is_connected(),
-    };
-}
-
-ZMK_DISPLAY_WIDGET_LISTENER(widget_peripheral, struct peripheral_state, peripheral_update_cb, peripheral_get_state)
-ZMK_SUBSCRIPTION(widget_peripheral, zmk_split_peripheral_status_changed);
-#endif
-
 struct layer_state {
     uint8_t index;
     const char *label;
@@ -485,10 +445,6 @@ int zmk_widget_custom_status_init(struct zmk_widget_custom_status *widget, lv_ob
     widget_battery_init();
 #if IS_ENABLED(CONFIG_ZMK_BLE)
     widget_bt_init();
-#endif
-#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-    peripheral_connected = zmk_split_bt_peripheral_is_connected();
-    widget_peripheral_init();
 #endif
     widget_layer_init();
     widget_keycode_init();
