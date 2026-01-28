@@ -18,7 +18,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/keycode_state_changed.h>
 #include <zmk/keymap.h>
 #include <zmk/hid.h>
-#include <zmk/modifiers.h>
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/modifiers.h>
 #if IS_ENABLED(CONFIG_ZMK_BLE)
