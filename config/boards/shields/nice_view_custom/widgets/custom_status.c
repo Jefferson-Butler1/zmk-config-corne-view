@@ -90,11 +90,11 @@ static void draw_top(struct zmk_widget_custom_status *widget) {
 
     // Battery percentage (top left)
     lv_draw_label_dsc_t bat_dsc;
-    init_label_dsc(&bat_dsc, &lv_font_montserrat_18, LV_TEXT_ALIGN_LEFT);
+    init_label_dsc(&bat_dsc, &lv_font_montserrat_16, LV_TEXT_ALIGN_LEFT);
 
     char bat_text[8];
     snprintf(bat_text, sizeof(bat_text), "%d%%", widget->state.battery);
-    lv_canvas_draw_text(canvas, 4, 2, 40, &bat_dsc, bat_text);
+    lv_canvas_draw_text(canvas, 2, 2, 50, &bat_dsc, bat_text);
 
     // Status indicator (top right)
     lv_draw_label_dsc_t status_dsc;
@@ -196,10 +196,10 @@ static void draw_middle(struct zmk_widget_custom_status *widget) {
         lv_canvas_draw_text(canvas, 0, 36, CANVAS_SIZE, &label_dsc, line2);
     }
 #else
-    // Peripheral: show "RIGHT" label
+    // Peripheral: show connection status
     lv_draw_label_dsc_t big_dsc;
-    init_label_dsc(&big_dsc, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
-    lv_canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &big_dsc, "RIGHT");
+    init_label_dsc(&big_dsc, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
+    lv_canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &big_dsc, LV_SYMBOL_OK " LINKED");
 #endif
 
     rotate_canvas(canvas, widget->cbuf2);
@@ -235,8 +235,8 @@ static void draw_bottom(struct zmk_widget_custom_status *widget) {
 
     lv_canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &label_dsc, name);
 #else
-    // Peripheral: show battery icon or "PERIPH"
-    lv_canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &label_dsc, "PERIPH");
+    // Peripheral: show "RIGHT" identifier
+    lv_canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &label_dsc, "RIGHT");
 #endif
 
     rotate_canvas(canvas, widget->cbuf3);

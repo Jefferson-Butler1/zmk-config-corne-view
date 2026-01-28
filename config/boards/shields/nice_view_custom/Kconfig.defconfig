@@ -35,6 +35,7 @@ config NICE_VIEW_CUSTOM_WIDGET
     default y
     select LV_FONT_MONTSERRAT_26
     select LV_FONT_MONTSERRAT_18
+    select LV_FONT_MONTSERRAT_16
     select LV_FONT_MONTSERRAT_14
     select LV_USE_IMG
     select LV_USE_CANVAS
