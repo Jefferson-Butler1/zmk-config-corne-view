@@ -18,7 +18,9 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/keycode_state_changed.h>
 #include <zmk/keymap.h>
 #include <zmk/hid.h>
+#include <zmk/modifiers.h>
 #include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/modifiers.h>
 #if IS_ENABLED(CONFIG_ZMK_BLE)
 #include <zmk/ble.h>
 #include <zmk/events/ble_active_profile_changed.h>
@@ -38,12 +40,6 @@ static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
 static char char_buffer[CHAR_BUFFER_SIZE + 1] = {0};
 static int char_buffer_pos = 0;
-
-// Modifier state
-static bool mod_shift = false;
-static bool mod_ctrl = false;
-static bool mod_alt = false;
-static bool mod_gui = false;
 #endif
 
 // ============================================================================
@@ -119,6 +115,13 @@ static void draw_top(struct zmk_widget_custom_status *widget) {
 
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
     // Modifier indicators (bottom of top section) - central only
+    // Get actual modifier state from HID report
+    zmk_mod_flags_t mods = zmk_hid_get_explicit_mods();
+    bool mod_ctrl = (mods & (MOD_LCTL | MOD_RCTL)) != 0;
+    bool mod_alt = (mods & (MOD_LALT | MOD_RALT)) != 0;
+    bool mod_gui = (mods & (MOD_LGUI | MOD_RGUI)) != 0;
+    bool mod_shift = (mods & (MOD_LSFT | MOD_RSFT)) != 0;
+
     lv_draw_rect_dsc_t mod_bg;
     init_rect_dsc(&mod_bg, FOREGROUND);
 
@@ -196,10 +199,22 @@ static void draw_middle(struct zmk_widget_custom_status *widget) {
         lv_canvas_draw_text(canvas, 0, 36, CANVAS_SIZE, &label_dsc, line2);
     }
 #else
-    // Peripheral: show connection status
+    // Peripheral: show uptime
+    int64_t uptime_ms = k_uptime_get();
+    int hours = (int)(uptime_ms / 3600000);
+    int mins = (int)((uptime_ms % 3600000) / 60000);
+    int secs = (int)((uptime_ms % 60000) / 1000);
+
+    char uptime_text[16];
+    if (hours > 0) {
+        snprintf(uptime_text, sizeof(uptime_text), "%dh %dm", hours, mins);
+    } else {
+        snprintf(uptime_text, sizeof(uptime_text), "%dm %ds", mins, secs);
+    }
+
     lv_draw_label_dsc_t big_dsc;
     init_label_dsc(&big_dsc, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
-    lv_canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &big_dsc, LV_SYMBOL_OK " LINKED");
+    lv_canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &big_dsc, uptime_text);
 #endif
 
     rotate_canvas(canvas, widget->cbuf2);
@@ -370,35 +385,13 @@ static void add_char_to_buffer(char c) {
     char_buffer[char_buffer_pos] = '\0';
 }
 
-static void update_modifier_state(uint32_t keycode, bool pressed) {
-    switch (keycode) {
-        case HID_USAGE_KEY_KEYBOARD_LEFTSHIFT:
-        case HID_USAGE_KEY_KEYBOARD_RIGHTSHIFT:
-            mod_shift = pressed;
-            break;
-        case HID_USAGE_KEY_KEYBOARD_LEFTCONTROL:
-        case HID_USAGE_KEY_KEYBOARD_RIGHTCONTROL:
-            mod_ctrl = pressed;
-            break;
-        case HID_USAGE_KEY_KEYBOARD_LEFTALT:
-        case HID_USAGE_KEY_KEYBOARD_RIGHTALT:
-            mod_alt = pressed;
-            break;
-        case HID_USAGE_KEY_KEYBOARD_LEFT_GUI:
-        case HID_USAGE_KEY_KEYBOARD_RIGHT_GUI:
-            mod_gui = pressed;
-            break;
-    }
-}
-
 struct keycode_state {
     uint32_t keycode;
     bool pressed;
 };
 
 static void keycode_update_cb(struct keycode_state state) {
-    update_modifier_state(state.keycode, state.pressed);
-
+    // Redraw top section (modifiers are read from HID report in draw_top)
     struct zmk_widget_custom_status *widget;
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
         draw_top(widget);
@@ -406,7 +399,11 @@ static void keycode_update_cb(struct keycode_state state) {
 
     if (!state.pressed) return;
 
-    char c = keycode_to_char(state.keycode, mod_shift);
+    // Get current shift state from HID report
+    zmk_mod_flags_t mods = zmk_hid_get_explicit_mods();
+    bool shifted = (mods & (MOD_LSFT | MOD_RSFT)) != 0;
+
+    char c = keycode_to_char(state.keycode, shifted);
     if (c != 0) {
         add_char_to_buffer(c);
 
