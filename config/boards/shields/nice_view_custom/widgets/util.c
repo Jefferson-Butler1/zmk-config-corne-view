@@ -1,0 +1,42 @@
+/*
+ * Forked from ZMK Nice!View widget
+ * Copyright (c) 2023 The ZMK Contributors
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <zephyr/kernel.h>
+#include "util.h"
+
+void rotate_canvas(lv_obj_t *canvas, lv_color_t cbuf[]) {
+    static lv_color_t temp[CANVAS_SIZE * CANVAS_SIZE];
+    memcpy(temp, cbuf, sizeof(temp));
+    lv_img_dsc_t img = {
+        .header.w = CANVAS_SIZE,
+        .header.h = CANVAS_SIZE,
+        .data_size = CANVAS_SIZE * CANVAS_SIZE * sizeof(lv_color_t),
+        .header.cf = LV_IMG_CF_TRUE_COLOR,
+        .data = (void *)temp,
+    };
+    lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
+    lv_canvas_transform(canvas, &img, 900, LV_IMG_ZOOM_NONE, -1, 0, CANVAS_SIZE / 2,
+                        CANVAS_SIZE / 2, true);
+}
+
+void init_label_dsc(lv_draw_label_dsc_t *label_dsc, lv_color_t color, const lv_font_t *font,
+                    lv_text_align_t align) {
+    lv_draw_label_dsc_init(label_dsc);
+    label_dsc->color = color;
+    label_dsc->font = font;
+    label_dsc->align = align;
+}
+
+void init_rect_dsc(lv_draw_rect_dsc_t *rect_dsc, lv_color_t bg_color) {
+    lv_draw_rect_dsc_init(rect_dsc);
+    rect_dsc->bg_color = bg_color;
+}
+
+void init_line_dsc(lv_draw_line_dsc_t *line_dsc, lv_color_t color, uint8_t width) {
+    lv_draw_line_dsc_init(line_dsc);
+    line_dsc->color = color;
+    line_dsc->width = width;
+}
