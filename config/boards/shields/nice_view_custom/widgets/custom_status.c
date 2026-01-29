@@ -49,26 +49,7 @@ static void draw_top(lv_obj_t *widget, lv_color_t cbuf[], const struct status_st
 
     lv_canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
 
-    // Battery outline with fill level
-    lv_canvas_draw_rect(canvas, 0, 2, 36, 14, &rect_white_dsc);
-    lv_canvas_draw_rect(canvas, 1, 3, 34, 12, &rect_black_dsc);
-    lv_canvas_draw_rect(canvas, 2, 4, (state->battery * 32) / 100, 10, &rect_white_dsc);
-    lv_canvas_draw_rect(canvas, 36, 5, 3, 8, &rect_white_dsc);
-    lv_canvas_draw_rect(canvas, 37, 6, 1, 6, &rect_black_dsc);
-
-    // Battery percentage text inside
-    char bat_text[5];
-    snprintf(bat_text, sizeof(bat_text), "%d", state->battery);
-    lv_canvas_draw_text(canvas, 0, 1, 36, &label_dsc, bat_text);
-
-    // Charging bolt
-    if (state->charging) {
-        lv_draw_img_dsc_t img_dsc;
-        lv_draw_img_dsc_init(&img_dsc);
-        lv_canvas_draw_img(canvas, 12, -1, &bolt, &img_dsc);
-    }
-
-    // Connection status
+    // Connection status (top right, draw first so battery can overlap if needed)
     char conn_text[10] = {};
     switch (state->selected_endpoint.transport) {
     case ZMK_TRANSPORT_USB:
@@ -88,7 +69,26 @@ static void draw_top(lv_obj_t *widget, lv_color_t cbuf[], const struct status_st
         }
         break;
     }
-    lv_canvas_draw_text(canvas, 0, 0, CANVAS_SIZE - 2, &label_dsc_right, conn_text);
+    lv_canvas_draw_text(canvas, 40, 0, CANVAS_SIZE - 42, &label_dsc_right, conn_text);
+
+    // Battery outline with fill level
+    lv_canvas_draw_rect(canvas, 0, 2, 29, 12, &rect_white_dsc);
+    lv_canvas_draw_rect(canvas, 1, 3, 27, 10, &rect_black_dsc);
+    lv_canvas_draw_rect(canvas, 2, 4, (state->battery * 25) / 100, 8, &rect_white_dsc);
+    lv_canvas_draw_rect(canvas, 29, 4, 3, 6, &rect_white_dsc);
+    lv_canvas_draw_rect(canvas, 30, 5, 1, 4, &rect_black_dsc);
+
+    // Battery percentage text inside
+    char bat_text[5];
+    snprintf(bat_text, sizeof(bat_text), "%d", state->battery);
+    lv_canvas_draw_text(canvas, 0, 0, 29, &label_dsc, bat_text);
+
+    // Charging bolt
+    if (state->charging) {
+        lv_draw_img_dsc_t img_dsc;
+        lv_draw_img_dsc_init(&img_dsc);
+        lv_canvas_draw_img(canvas, 9, -1, &bolt, &img_dsc);
+    }
 
     rotate_canvas(canvas, cbuf);
 }
