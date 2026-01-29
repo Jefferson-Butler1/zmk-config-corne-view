@@ -163,13 +163,7 @@ static void draw_middle(lv_obj_t *widget, lv_color_t cbuf[], const struct status
         points[i].y = 63 - (state->wpm[i] - min) * 36 / range;
     }
 
-    for (int i = 1; i < 10; i++) {
-        line_dsc.p1.x = points[i-1].x;
-        line_dsc.p1.y = points[i-1].y;
-        line_dsc.p2.x = points[i].x;
-        line_dsc.p2.y = points[i].y;
-        lv_canvas_draw_line(canvas, &points[i-1], 2, &line_dsc);
-    }
+    lv_canvas_draw_line(canvas, points, 10, &line_dsc);
 
     rotate_canvas(canvas, cbuf);
 }
