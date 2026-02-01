@@ -33,9 +33,9 @@
                 dictate: dictate {
                         compatible = "zmk,behavior-macro";
                         #binding-cells = <0>;
-                        bindings = <&macro_press &kp LCTRL &kp LSHFT>
+                        bindings = <&macro_press &kp LCTRL &kp LALT>
                                  , <&macro_tap &kp D>
-                                 , <&macro_release &kp LCTRL &kp LSHFT>;
+                                 , <&macro_release &kp LCTRL &kp LALT>;
                 };
         };
 
