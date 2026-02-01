@@ -19,12 +19,23 @@
                 ss_full: ss_full {
                         compatible = "zmk,behavior-macro";
                         #binding-cells = <0>;
-                        bindings = <&kp LG(LC(LS(N3)))>;
+                        bindings = <&macro_press &kp LSHFT &kp LCTRL &kp LGUI>
+                                 , <&macro_tap &kp N3>
+                                 , <&macro_release &kp LSHFT &kp LCTRL &kp LGUI>;
                 };
                 ss_sel: ss_sel {
                         compatible = "zmk,behavior-macro";
                         #binding-cells = <0>;
-                        bindings = <&kp LG(LC(LS(N4)))>;
+                        bindings = <&macro_press &kp LSHFT &kp LCTRL &kp LGUI>
+                                 , <&macro_tap &kp N4>
+                                 , <&macro_release &kp LSHFT &kp LCTRL &kp LGUI>;
+                };
+                dictate: dictate {
+                        compatible = "zmk,behavior-macro";
+                        #binding-cells = <0>;
+                        bindings = <&macro_press &kp LCTRL &kp LSHFT>
+                                 , <&macro_tap &kp D>
+                                 , <&macro_release &kp LCTRL &kp LSHFT>;
                 };
         };
 
@@ -61,7 +72,7 @@
                 lower_layer {
                         bindings = <
    &kp ESC    &kp N1     &kp N2     &kp N3       &kp N4       &kp N5             &kp N6   &kp N7   &kp N8 &kp N9    &kp N0 &kp BSPC
-   &trans     &trans     &ss_sel    &ss_full     &trans       &kp C_MUTE         &kp LEFT &kp DOWN &kp UP &kp RIGHT &trans &trans
+   &trans     &dictate   &ss_sel    &ss_full     &trans       &kp C_MUTE         &kp LEFT &kp DOWN &kp UP &kp RIGHT &trans &trans
    &kp LSHFT  &kp C_PREV &kp C_NEXT &kp C_VOL_DN &kp C_VOL_UP &kp C_PLAY_PAUSE   &trans   &trans   &trans &trans    &trans &trans
                                     &kp LGUI     &trans       &kp LALT           &kp RET  &trans   &kp RALT
                         >;
